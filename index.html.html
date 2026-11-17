@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LGG-Prognos v2.0 | Dual-Track & Population-Recalibrated Clinical Decision System</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #2563eb;
+      --secondary: #0f766e;
+      --accent: #d97706;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px 16px; line-height: 1.5; }
+    .container { max-width: 1260px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+      color: white; padding: 32px 28px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+    header p { font-size: 14.5px; opacity: 0.92; max-width: 880px; }
+    .badge-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); }
+    .main-grid { display: grid; grid-template-columns: 1.05fr 1.15fr; gap: 24px; }
+    @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
+    .card-title { font-size: 17.5px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .helper { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    input[type="number"], select { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; background: #fff; }
+    .slider-box { display: flex; align-items: center; gap: 12px; }
+    input[type="range"] { flex: 1; accent-color: var(--primary); }
+    .btn-toggle-group { display: flex; gap: 8px; }
+    .btn-toggle { flex: 1; padding: 9px 12px; border: 1px solid var(--border); background: #fff; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s ease; }
+    .btn-toggle.active { background: #eff6ff; border-color: var(--primary-light); color: var(--primary); }
+    .switch-pill-box { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
+    .switch-pill { flex: 1; padding: 9px; border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-radius: 8px; text-align: center; }
+    .switch-pill.active { background: #fff; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
+    .risk-banner { padding: 16px 20px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; font-weight: 700; }
+    .risk-banner.low { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .risk-banner.high { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+    .metric-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 16px 12px; text-align: center; }
+    .metric-val { font-size: 26px; font-weight: 800; color: var(--primary); margin: 4px 0; }
+    .metric-lbl { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .bar-bg { background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    .bar-fill { height: 100%; background: var(--primary-light); transition: width 0.35s ease; }
+    .recom-box { background: #f0fdf4; border-left: 4px solid var(--success); padding: 14px 16px; border-radius: 0 8px 8px 0; font-size: 13.5px; margin-bottom: 18px; }
+    .recom-box.high-risk { background: #fef2f2; border-left-color: var(--danger); }
+    .recom-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    /* Adjuvant Simulator */
+    .simulator-card { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+    .sim-header { font-size: 14.5px; font-weight: 700; color: #6b21a8; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; font-size: 12.5px; }
+    .sim-col { background: #fff; padding: 10px 8px; border-radius: 8px; border: 1px solid #f3e8ff; }
+    .sim-num { font-size: 18px; font-weight: 800; margin-top: 4px; }
+    .diff-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; }
+    .diff-badge.gain { background: #dcfce7; color: #15803d; }
+    .diff-badge.neutral { background: #f1f5f9; color: #475569; }
+    table.data-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 10px; }
+    table.data-table th, table.data-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    table.data-table th { color: var(--muted); }
+    footer { text-align: center; font-size: 12.5px; color: var(--muted); padding: 24px 0; border-top: 1px solid var(--border); margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LGG-Prognos v2.0 | Dual-Track Clinical & Molecular Prognostic Calculator</h1>
+      <p>Next-generation individualized prognosis engine for WHO Grade 2 & 3 diffuse lower-grade gliomas. Empirically derived from NCI SEER (n=13,445) and externally validated with population baseline recalibration in the CGGA East Asian cohort (n=386).</p>
+      <div class="badge-bar">
+        <span class="badge">NCI SEER Database (n=13,445)</span>
+        <span class="badge">CGGA External Cohort (n=386)</span>
+        <span class="badge">WHO CNS5 Integrated Molecular Classification</span>
+        <span class="badge">Trans-Pacific Population Recalibrated</span>
+        <span class="badge">Adjuvant CRT Heterogeneity Simulator</span>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      <!-- Input Column -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Patient Profile & Stratification Settings</div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label>1. Model Architecture</label>
+          <div class="switch-pill-box">
+            <button class="switch-pill active" id="tabTrackB" onclick="switchTrack('B')">Track B: WHO CNS5 (Molecular Standard)</button>
+            <button class="switch-pill" id="tabTrackA" onclick="switchTrack('A')">Track A: Clinical Model</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label>2. Population Baseline Recalibration</label>
+          <div class="btn-toggle-group">
+            <div class="btn-toggle active" id="popSeer" onclick="selectPop('SEER')">US / Western Baseline (SEER)</div>
+            <div class="btn-toggle" id="popCgga" onclick="selectPop('CGGA')">East Asian Recalibrated (CGGA)</div>
+          </div>
+          <div class="helper">Population recalibration adjusts baseline hazard while preserving optimal discrimination.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Patient Age at Diagnosis: <span id="ageVal">45</span> years</label>
+          <div class="slider-box">
+            <input type="range" id="ageRange" min="18" max="85" value="45" oninput="syncAge(this.value)">
+            <input type="number" id="ageNum" min="18" max="85" value="45" style="width: 75px;" oninput="syncAge(this.value)">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Biological Sex</label>
+          <div class="btn-toggle-group">
+            <div class="btn-toggle active" id="sexFemale" onclick="selectOption('sex', 'Female')">Female</div>
+            <div class="btn-toggle" id="sexMale" onclick="selectOption('sex', 'Male')">Male</div>
+          </div>
+        </div>
+
+        <div class="form-group" id="histGroup" style="display: none;">
+          <label>Histological Classification (Track A Only)</label>
+          <select id="histology" onchange="recalculate()">
+            <option value="Astrocytoma">Astrocytoma</option>
+            <option value="Oligodendroglioma">Oligodendroglioma</option>
+            <option value="Oligoastrocytoma">Oligoastrocytoma</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>WHO Histological Grade</label>
+          <div class="btn-toggle-group">
+            <div class="btn-toggle active" id="grade2" onclick="selectOption('grade', 'Grade II')">WHO Grade II (Low-grade)</div>
+            <div class="btn-toggle" id="grade3" onclick="selectOption('grade', 'Grade III')">WHO Grade III (High-grade)</div>
+          </div>
+        </div>
+
+        <div class="form-group" id="molGroup">
+          <label>Molecular Subtype (WHO CNS5 Classification)</label>
+          <select id="molSubtype" onchange="recalculate()">
+            <option value="IDHmut-codel">Oligodendroglioma, IDH-mutant & 1p/19q-codeleted (Favorable)</option>
+            <option value="IDHmut-non-codel">Astrocytoma, IDH-mutant (1p/19q-intact)</option>
+            <option value="IDHwt">Astrocytoma, IDH-wildtype (Molecular glioblastoma biology / High Risk)</option>
+          </select>
+          <div class="helper">WHO 2021 CNS5 mandates IDH & 1p/19q testing for definitive biological classification.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Postoperative Radiotherapy</label>
+          <div class="btn-toggle-group">
+            <div class="btn-toggle" id="rtNo" onclick="selectOption('rt', 'No')">No Radiotherapy</div>
+            <div class="btn-toggle active" id="rtYes" onclick="selectOption('rt', 'Yes')">Radiotherapy Received</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Postoperative Chemotherapy</label>
+          <div class="btn-toggle-group">
+            <div class="btn-toggle" id="ctNo" onclick="selectOption('ct', 'No')">No Chemotherapy</div>
+            <div class="btn-toggle active" id="ctYes" onclick="selectOption('ct', 'Yes')">Chemotherapy (TMZ / PCV)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Column -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Predicted Prognostic Evaluation</div>
+            <span id="headerBadge" class="badge" style="background:#1e3a8a; color:#fff;">Track B (WHO CNS5)</span>
+          </div>
+
+          <div id="riskBanner" class="risk-banner low">
+            <div>
+              <div style="font-size: 15.5px;" id="riskTitle">LOW BIOLOGICAL RISK TIER</div>
+              <div style="font-size: 12px; font-weight: normal; opacity: 0.85;">Multi-variable prognostic risk index based on SEER threshold</div>
+            </div>
+            <div id="riskScoreVal" style="background:rgba(0,0,0,0.06); padding:4px 10px; border-radius:6px; font-size:12.5px;">Index: -0.38</div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="metric-lbl" id="lbl1">1-Year Survival</div>
+              <div class="metric-val" id="val1">96.8%</div>
+              <div class="bar-bg"><div class="bar-fill" id="bar1" style="width: 96.8%;"></div></div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-lbl" id="lbl2">3-Year Survival</div>
+              <div class="metric-val" id="val2">89.4%</div>
+              <div class="bar-bg"><div class="bar-fill" id="bar2" style="width: 89.4%;"></div></div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-lbl" id="lbl3">5-Year Survival</div>
+              <div class="metric-val" id="val3">82.1%</div>
+              <div class="bar-bg"><div class="bar-fill" id="bar3" style="width: 82.1%;"></div></div>
+            </div>
+          </div>
+
+          <!-- Adjuvant CRT Benefit Simulator -->
+          <div class="simulator-card">
+            <div class="sim-header">
+              <span>Adjuvant Chemoradiotherapy (CRT) Benefit Simulator</span>
+              <span id="diffBadge" class="diff-badge neutral">+0.8% 5y Gain</span>
+            </div>
+            <div class="sim-grid">
+              <div class="sim-col">
+                <div style="color:var(--muted); font-size:11.5px;">With Adjuvant CRT</div>
+                <div class="sim-num" id="simWithCRT" style="color:#15803d;">82.1%</div>
+                <div style="font-size:11px; color:#15803d;">Expected 5y OS</div>
+              </div>
+              <div class="sim-col">
+                <div style="color:var(--muted); font-size:11.5px;">Without CRT (Obs/Mono)</div>
+                <div class="sim-num" id="simNoCRT" style="color:#b45309;">81.3%</div>
+                <div style="font-size:11px; color:#b45309;">Expected 5y OS</div>
+              </div>
+              <div class="sim-col">
+                <div style="color:var(--muted); font-size:11.5px;">Absolute CRT Benefit</div>
+                <div class="sim-num" id="simAbsDiff" style="color:#1e3a8a;">+0.8%</div>
+                <div style="font-size:11px; color:#1e3a8a;">Δ 5-Year Survival</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="recomBox" class="recom-box">
+            <h4 id="recomHeader">Multidisciplinary Treatment Recommendation:</h4>
+            <p id="recomText">The patient belongs to the favorable prognostic tier with high expected long-term survival. Active surveillance or monotherapy may be discussed to balance tumor control while deferring radiotherapy-induced neurocognitive decline.</p>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px;">COHORT BENCHMARK & DISCRIMINATION METRICS</div>
+            <table class="data-table">
+              <tr>
+                <th>Dataset</th>
+                <th>Sample Size</th>
+                <th>Harrell's C-index</th>
+                <th>3-Year AUC (95% CI)</th>
+              </tr>
+              <tr>
+                <td>SEER Internal Test</td>
+                <td id="tblSeerN">n = 1,029</td>
+                <td id="tblSeerC">0.861</td>
+                <td id="tblSeerAuc">0.878 (0.849–0.907)</td>
+              </tr>
+              <tr>
+                <td>CGGA External Validation</td>
+                <td id="tblCggaN">n = 333</td>
+                <td id="tblCggaC">0.769</td>
+                <td id="tblCggaAuc">0.839 (0.782–0.895)</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      &copy; 2026 LGG-Prognos Research Project | Validated on SEER (n=13,445) & CGGA (n=386) Cohorts | Dual-Calibration Architecture v2.0
+    </footer>
+  </div>
+
+  <script>
+    const MODEL_DATA = {
+      trackA: {
+        coefs: {"Age": 0.04583057785298348, "Sex_Male": 0.11287584766163308, "Histology_Oligoastrocytoma": -0.19673261706782766, "Histology_Oligodendroglioma": -0.8657022625437218, "Grade_Grade III": 0.5238246856292431, "Radiotherapy_Yes": 0.09761050717432616, "Chemotherapy_Yes": -0.3161578935322761},
+        means: {"Age": 47.0843693550101, "Sex_Male": 0.5656147061948783, "Histology_Oligoastrocytoma": 0.04792264371480183, "Histology_Oligodendroglioma": 0.3034746573159069, "Grade_Grade III": 0.5799596217192647, "Radiotherapy_Yes": 0.6821804271597067, "Chemotherapy_Yes": 0.5835724152587398},
+        s0_seer: {"12": 0.8497076223620427, "36": 0.6514120652664442, "60": 0.5456057120460388},
+        s0_cgga: {"12": 0.9084824791850808, "36": 0.7097234357538347, "60": 0.5567897879754738},
+        cutoff: -0.0886463110049637,
+        seer_n: "4,034", seer_c: "0.755", seer_auc: "0.826 (0.812–0.840)",
+        cgga_n: "386", cgga_c: "0.710", cgga_auc: "0.750 (0.697–0.803)"
+      },
+      trackB: {
+        coefs: {"Age": 0.04237206899405847, "Sex_Male": 0.08577963460712247, "Grade_Grade III": 0.8518357717965751, "Molecular_Subtype_IDHmut-non-codel": 0.6020378178057512, "Molecular_Subtype_IDHwt": 1.7480745630669428, "Radiotherapy_Yes": 0.004765764163160701, "Chemotherapy_Yes": -0.3626917573948976},
+        means: {"Age": 44.54560599750104, "Sex_Male": 0.5697625989171179, "Grade_Grade III": 0.46688879633486047, "Molecular_Subtype_IDHmut-non-codel": 0.4198250728862974, "Molecular_Subtype_IDHwt": 0.19491878384006664, "Radiotherapy_Yes": 0.6809662640566431, "Chemotherapy_Yes": 0.6705539358600583},
+        s0_seer: {"12": 0.9467220323747763, "24": 0.8916580010701793, "36": 0.8447865716166219, "60": 0.774429866832706},
+        s0_cgga: {"12": 0.9323273002097159, "24": 0.8540205833301407, "36": 0.7736644503725572, "60": 0.6495526685563474},
+        cutoff: -0.24793411725790984,
+        seer_n: "1,029", seer_c: "0.861", seer_auc: "0.878 (0.849–0.907)",
+        cgga_n: "333", cgga_c: "0.769", cgga_auc: "0.839 (0.782–0.895)"
+      }
+    };
+
+    let currentTrack = 'B';
+    let currentPop = 'SEER';
+    let state = {
+      age: 45,
+      sex: 'Female',
+      histology: 'Astrocytoma',
+      grade: 'Grade II',
+      molSubtype: 'IDHmut-codel',
+      radiotherapy: 'Yes',
+      chemotherapy: 'Yes'
+    };
+
+    function switchTrack(track) {
+      currentTrack = track;
+      document.getElementById('tabTrackA').classList.toggle('active', track === 'A');
+      document.getElementById('tabTrackB').classList.toggle('active', track === 'B');
+      document.getElementById('molGroup').style.display = (track === 'B') ? 'block' : 'none';
+      document.getElementById('histGroup').style.display = (track === 'A') ? 'block' : 'none';
+      document.getElementById('headerBadge').innerText = (track === 'B') ? 'Track B (WHO CNS5)' : 'Track A (Clinical)';
+      recalculate();
+    }
+
+    function selectPop(pop) {
+      currentPop = pop;
+      document.getElementById('popSeer').classList.toggle('active', pop === 'SEER');
+      document.getElementById('popCgga').classList.toggle('active', pop === 'CGGA');
+      recalculate();
+    }
+
+    function syncAge(val) {
+      val = parseInt(val) || 18;
+      val = Math.max(18, Math.min(85, val));
+      document.getElementById('ageRange').value = val;
+      document.getElementById('ageNum').value = val;
+      document.getElementById('ageVal').innerText = val;
+      state.age = val;
+      recalculate();
+    }
+
+    function selectOption(category, value) {
+      if (category === 'sex') {
+        state.sex = value;
+        document.getElementById('sexFemale').classList.toggle('active', value === 'Female');
+        document.getElementById('sexMale').classList.toggle('active', value === 'Male');
+      } else if (category === 'grade') {
+        state.grade = value;
+        document.getElementById('grade2').classList.toggle('active', value === 'Grade II');
+        document.getElementById('grade3').classList.toggle('active', value === 'Grade III');
+      } else if (category === 'rt') {
+        state.radiotherapy = value;
+        document.getElementById('rtNo').classList.toggle('active', value === 'No');
+        document.getElementById('rtYes').classList.toggle('active', value === 'Yes');
+      } else if (category === 'ct') {
+        state.chemotherapy = value;
+        document.getElementById('ctNo').classList.toggle('active', value === 'No');
+        document.getElementById('ctYes').classList.toggle('active', value === 'Yes');
+      }
+      recalculate();
+    }
+
+    function calculateRisk(rtVal, ctVal) {
+      const m = (currentTrack === 'B') ? MODEL_DATA.trackB : MODEL_DATA.trackA;
+      let feats = {
+        'Age': state.age,
+        'Sex_Male': (state.sex === 'Male') ? 1.0 : 0.0,
+        'Grade_Grade III': (state.grade === 'Grade III') ? 1.0 : 0.0,
+        'Radiotherapy_Yes': (rtVal === 'Yes') ? 1.0 : 0.0,
+        'Chemotherapy_Yes': (ctVal === 'Yes') ? 1.0 : 0.0
+      };
+
+      if (currentTrack === 'A') {
+        feats['Histology_Oligoastrocytoma'] = (state.histology === 'Oligoastrocytoma') ? 1.0 : 0.0;
+        feats['Histology_Oligodendroglioma'] = (state.histology === 'Oligodendroglioma') ? 1.0 : 0.0;
+      } else {
+        feats['Molecular_Subtype_IDHmut-non-codel'] = (state.molSubtype === 'IDHmut-non-codel') ? 1.0 : 0.0;
+        feats['Molecular_Subtype_IDHwt'] = (state.molSubtype === 'IDHwt') ? 1.0 : 0.0;
+      }
+
+      let lp = 0.0;
+      for (const [k, coef] of Object.entries(m.coefs)) {
+        const mean = m.means[k] || 0.0;
+        const val = feats[k] || 0.0;
+        lp += coef * (val - mean);
+      }
+
+      const s0_map = (currentPop === 'SEER') ? m.s0_seer : m.s0_cgga;
+      const hr = Math.exp(lp);
+      return {
+        lp: lp,
+        s1: Math.pow(s0_map[12], hr),
+        s3: Math.pow(s0_map[36], hr),
+        s5: Math.pow(s0_map[60], hr)
+      };
+    }
+
+    function recalculate() {
+      state.histology = document.getElementById('histology').value;
+      state.molSubtype = document.getElementById('molSubtype').value;
+
+      const m = (currentTrack === 'B') ? MODEL_DATA.trackB : MODEL_DATA.trackA;
+
+      // Current patient configuration
+      const cur = calculateRisk(state.radiotherapy, state.chemotherapy);
+      // Simulation: With CRT vs Without CRT
+      const withCRT = calculateRisk('Yes', 'Yes');
+      const withoutCRT = calculateRisk('No', 'No');
+
+      const p1 = Math.min(99.9, Math.max(1.0, cur.s1 * 100));
+      const p3 = Math.min(99.9, Math.max(1.0, cur.s3 * 100));
+      const p5 = Math.min(99.9, Math.max(1.0, cur.s5 * 100));
+
+      document.getElementById('val1').innerText = p1.toFixed(1) + '%';
+      document.getElementById('val2').innerText = p3.toFixed(1) + '%';
+      document.getElementById('val3').innerText = p5.toFixed(1) + '%';
+
+      document.getElementById('bar1').style.width = p1.toFixed(1) + '%';
+      document.getElementById('bar2').style.width = p3.toFixed(1) + '%';
+      document.getElementById('bar3').style.width = p5.toFixed(1) + '%';
+
+      // Simulator display
+      const sWith5 = Math.min(99.9, Math.max(1.0, withCRT.s5 * 100));
+      const sNo5 = Math.min(99.9, Math.max(1.0, withoutCRT.s5 * 100));
+      const diff5 = sWith5 - sNo5;
+
+      document.getElementById('simWithCRT').innerText = sWith5.toFixed(1) + '%';
+      document.getElementById('simNoCRT').innerText = sNo5.toFixed(1) + '%';
+      document.getElementById('simAbsDiff').innerText = (diff5 >= 0 ? '+' : '') + diff5.toFixed(1) + '%';
+
+      const diffBadge = document.getElementById('diffBadge');
+      if (diff5 >= 5.0) {
+        diffBadge.className = 'diff-badge gain';
+        diffBadge.innerText = '+' + diff5.toFixed(1) + '% Substantial CRT Gain';
+      } else {
+        diffBadge.className = 'diff-badge neutral';
+        diffBadge.innerText = (diff5 >= 0 ? '+' : '') + diff5.toFixed(1) + '% Marginal Difference';
+      }
+
+      // Risk Stratification & Recommendation (Fixed innerText assignment)
+      const isHigh = (cur.lp > m.cutoff);
+      const banner = document.getElementById('riskBanner');
+      const riskTitle = document.getElementById('riskTitle');
+      const recomBox = document.getElementById('recomBox');
+      const recomHeader = document.getElementById('recomHeader');
+      const recomText = document.getElementById('recomText');
+
+      document.getElementById('riskScoreVal').innerText = 'Risk Index: ' + cur.lp.toFixed(2);
+
+      if (isHigh) {
+        banner.className = 'risk-banner high';
+        riskTitle.innerText = 'HIGH BIOLOGICAL RISK GROUP';
+        recomBox.className = 'recom-box high-risk';
+        recomHeader.innerText = 'High-Risk Multidisciplinary Action Protocol:';
+        if (currentTrack === 'B' && state.molSubtype === 'IDHwt') {
+          recomText.innerText = 'Patient exhibits IDH-wildtype diffuse glioma (molecular glioblastoma biology). Early initiation of combined chemoradiotherapy (Stupp / PCV protocol) is strongly recommended, paired with close 2–3 month MRI monitoring and evaluation for targeted clinical trials.';
+        } else {
+          recomText.innerText = 'Patient exhibits high-risk baseline features (e.g. WHO Grade III, advanced age, or aggressive subtype). Adjuvant chemoradiotherapy (CRT) confers significant absolute survival prolongation. Multi-agent adjuvant therapy with intensive 3-month imaging is advised.';
+        }
+      } else {
+        banner.className = 'risk-banner low';
+        riskTitle.innerText = 'LOW BIOLOGICAL RISK GROUP';
+        recomBox.className = 'recom-box';
+        recomHeader.innerText = 'Favorable Biology Management Protocol:';
+        recomText.innerText = 'Patient belongs to the favorable prognostic tier with high expected long-term survival. In young patients with Grade II IDH-mutant tumors, active surveillance or monotherapy may be considered to avoid radiation-induced neurocognitive decline, with routine 6-month MRI follow-up.';
+      }
+
+      // Update benchmark table
+      document.getElementById('tblSeerN').innerText = 'n = ' + m.seer_n;
+      document.getElementById('tblSeerC').innerText = m.seer_c;
+      document.getElementById('tblSeerAuc').innerText = m.seer_auc;
+      document.getElementById('tblCggaN').innerText = 'n = ' + m.cgga_n;
+      document.getElementById('tblCggaC').innerText = m.cgga_c;
+      document.getElementById('tblCggaAuc').innerText = m.cgga_auc;
+    }
+
+    // Initial run
+    recalculate();
+  </script>
+</body>
+</html>
